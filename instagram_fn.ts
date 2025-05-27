@@ -36,9 +36,6 @@ const createHeaders = (accessToken: string) => ({
 const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN!
 const appId = process.env.INSTAGRAM_APP_ID!
 
-// const accessToken = "IGAAZATQH9SA3pBZAE44SlNxRDFWZAE4xcmFiT2hmOVd3SjJ1X0pfTTVPc2dqZA21GWHdueWxtdV9zMnFhYkh6VVRTaHFHMzlUdUhRSGpJOHRKMWdTdXFLVEVvUTdKcEhvSUlSeExOaENGdWtxWmpPVFBSX2xsbllmckRhbG16bFp2ZAwZDZD"  
-// const  appId = "17841407440691450"
-
 
 export async function getPosts() {
   const headers = createHeaders(accessToken);
@@ -87,37 +84,76 @@ export async function UploadImage(
     alt_text,
     user_tags,
     product_tags
-    
   }: UploadImage,
 ) {
   if (!image_url) {
-    throw new Error("Either image_url or video_url must be provided.");
+    throw new Error("image_url must be provided.");
   }
   if (!caption) {
     throw new Error("Caption is required.");
   }
 
   const headers = createHeaders(accessToken);
-  const body: Record<string, string | undefined> = {
-    caption,
-    is_carousel_item,
-    media_type,
-    alt_text,
-    user_tags,
-    product_tags 
-  };
-
-  const response = await axios.post(`${BASE_URL}/${appId}/media`, body, {
-    headers,
-  });
-  console.log(response.data)
-  const publishHeaders = createHeaders(accessToken);
-  const publish = await axios.post(`${BASE_URL}/${appId}/media_publish`, {
-    creation_id: response.data.id
-  }, { headers : publishHeaders })
-
-  return publish.data;
   
+  // Create the request body with all required parameters
+  const body = new URLSearchParams();
+  body.append('image_url', image_url);
+  body.append('caption', caption);
+  body.append('is_carousel_item', is_carousel_item);
+  body.append('media_type', media_type);
+  body.append('alt_text', alt_text);
+  
+  if (user_tags) {
+    body.append('user_tags', user_tags);
+  }
+  if (product_tags) {
+    body.append('product_tags', product_tags);
+  }
+
+  try {
+    console.log('Creating media container...');
+    const createResponse = await axios.post(
+      `${BASE_URL}/${appId}/media`,
+      body.toString(),
+      {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+    
+    console.log('Media container created:', createResponse.data);
+    
+    const creationId = createResponse.data.id;
+    if (!creationId) {
+      throw new Error('No creation ID returned from Instagram API');
+    }
+    
+    // Wait a moment before publishing to ensure the container is ready
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log('Publishing media...');
+    const publishResponse = await axios.post(
+      `${BASE_URL}/${appId}/media_publish`,
+      new URLSearchParams({
+        creation_id: creationId
+      }).toString(),
+      {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+    
+    console.log('Media published successfully:', publishResponse.data);
+    return publishResponse.data;
+    
+  } catch (error: any ) {
+    console.error('Error in UploadImage:', error.response?.data || error.message);
+    throw error;
+  }
 }
 
 export async function publishMedia(creation_id: string) {
