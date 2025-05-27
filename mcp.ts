@@ -4,7 +4,6 @@ import * as z from "zod"
 import { deletePostComment, getPostComment, getPostComments, getPosts, replyPostComment, UploadImage } from "./instagram_fn";
 
 
-// const instagramClient = new InstagramClient({accessToken:"IGAAZATQH9SA3pBZAE44SlNxRDFWZAE4xcmFiT2hmOVd3SjJ1X0pfTTVPc2dqZA21GWHdueWxtdV9zMnFhYkh6VVRTaHFHMzlUdUhRSGpJOHRKMWdTdXFLVEVvUTdKcEhvSUlSeExOaENGdWtxWmpPVFBSX2xsbllmckRhbG16bFp2ZAwZDZD" , appId : "17841407440691450"})
 
 const server = new McpServer({
   transport: new StdioServerTransport(),
